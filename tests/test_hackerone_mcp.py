@@ -74,6 +74,11 @@ class LifecycleTests(unittest.TestCase):
 
 
 class ToolGatingTests(unittest.TestCase):
+    def test_tool_descriptions_warn_against_codebase_disclosure(self):
+        for spec, _ in h1.PUBLIC_TOOLS + h1.AUTH_TOOLS:
+            with self.subTest(tool=spec["name"]):
+                self.assertIn("Do not use this tool for codebase reviews", spec["description"])
+
     def test_public_only_without_credentials(self):
         with patch.dict(os.environ, NO_CREDS, clear=True):
             names = [s["name"] for s, _ in h1._tools()]

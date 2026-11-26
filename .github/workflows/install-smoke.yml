@@ -96,6 +96,27 @@ jobs:
           HOME="$T" ZDOTDIR="$T" bash scripts/install.sh --uninstall
           cmp "$T/expected" "$T/.bashrc"
 
+      - name: Copilot install uses shared skills without configuring MCP
+        run: |
+          set -euo pipefail
+          T="$(mktemp -d)"
+          mkdir -p "$T/.copilot"
+          printf '%s\n' '{"mcpServers":{"hackerone":{"command":"existing"}}}' > "$T/.copilot/mcp-config.json"
+          cp "$T/.copilot/mcp-config.json" "$T/expected.json"
+          HOME="$T" bash scripts/install.sh --copilot --hackerone-mcp --no-shell
+          test -f "$T/.agents/skills/hunt-dispatch/SKILL.md"
+          test "$(find "$T/.agents/skills" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq \
+               "$(find skills -mindepth 1 -maxdepth 1 -type d | wc -l)"
+          cmp "$T/expected.json" "$T/.copilot/mcp-config.json"
+          test ! -e "$T/.config/opencode/opencode.json"
+          test ! -e "$T/.codex/config.toml"
+          HOME="$T" bash scripts/install.sh --uninstall
+          test ! -e "$T/.agents/skills/hunt-dispatch"
+          cmp "$T/expected.json" "$T/.copilot/mcp-config.json"
+          HOME="$T" bash scripts/install.sh --all --no-shell
+          test -f "$T/.agents/skills/hunt-dispatch/SKILL.md"
+          cmp "$T/expected.json" "$T/.copilot/mcp-config.json"
+
   powershell-smoke:
     name: PowerShell parse and installer smoke
     runs-on: windows-latest
@@ -157,3 +178,23 @@ jobs:
               $config.mcp.burp.command[1] -ne 'argument with spaces') {
             throw "Burp MCP command was not copied"
           }
+      - name: Copilot install does not modify MCP settings
+        shell: pwsh
+        run: |
+          $tempProfile = Join-Path $env:RUNNER_TEMP "cbh-copilot-$([guid]::NewGuid())"
+          New-Item -ItemType Directory -Path (Join-Path $tempProfile '.copilot') -Force | Out-Null
+          Set-Variable -Name HOME -Scope Global -Value $tempProfile -Force
+          $env:USERPROFILE = $tempProfile
+          $env:TEMP = $tempProfile
+          $mcp = Join-Path $HOME '.copilot/mcp-config.json'
+          $original = '{"mcpServers":{"hackerone":{"command":"existing"}}}'
+          [System.IO.File]::WriteAllText($mcp, $original)
+          & ./scripts/install.ps1 -Copilot -HackeroneMcp -NoProfile
+          if (-not (Test-Path (Join-Path $HOME '.agents/skills/hunt-dispatch/SKILL.md'))) {
+            throw "Copilot skills not installed"
+          }
+          if ([System.IO.File]::ReadAllText($mcp) -ne $original) { throw "Copilot MCP settings changed" }
+          if (Test-Path (Join-Path $HOME '.codex/config.toml')) { throw "Codex configured unexpectedly" }
+          & ./scripts/install.ps1 -Uninstall
+          if (Test-Path (Join-Path $HOME '.agents/skills/hunt-dispatch')) { throw "Skills not removed" }
+          if ([System.IO.File]::ReadAllText($mcp) -ne $original) { throw "Copilot MCP settings changed" }

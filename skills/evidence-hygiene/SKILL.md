@@ -10,6 +10,11 @@ sources: community, operator_experience
 
 The core principle: **Bug-bounty evidence is meant to convince a triager. Anything beyond that — live cookies, real-user PII, internal trace IDs that aren't useful — should not be in the evidence.**
 
+For codebase reviews, do not send code, filenames, internal URLs, identifiers,
+findings, credentials, or any other codebase-derived details to HackerOne or
+other external research services through MCP, shell, or search. Use local
+analysis and the bundled patterns instead.
+
 ---
 
 ## 1. Two Categories of Sensitive Data

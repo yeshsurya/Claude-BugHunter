@@ -4,6 +4,13 @@ A stdio MCP server that gives the agent HackerOne data while hunting and writing
 standard library and reuses the HackerOne GraphQL client shape from
 `skills/offensive-osint/scripts/h1_reference.py`.
 
+**Codebase privacy:** Do not use this server for codebase reviews or pass source
+code, paths, internal URLs, identifiers, findings, or credentials as tool
+arguments. Search queries and program handles are sent to HackerOne. Tool
+descriptions are instructions, not a filter; disable the server and restrict
+network access when this must be enforced. The Copilot installer does not
+configure this server or disable a pre-existing configuration.
+
 ## Tools
 
 | Tool | Needs a key | What it returns |

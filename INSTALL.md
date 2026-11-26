@@ -67,7 +67,7 @@ This copies:
 
 Existing skills with the same name are backed up to `~/.claude/install-backups/<timestamp>/` — **outside** the skills/commands directories, so backups never load as duplicate skills. Re-runs are non-destructive.
 
-### Run on other harnesses (OpenCode · Codex · Hermes · Google AntiGravity)
+### Run on other harnesses (GitHub Copilot · OpenCode · Codex · Hermes · Google AntiGravity)
 
 The skills are plain Agent Skills, so they also run outside Claude Code:
 
@@ -75,6 +75,7 @@ The skills are plain Agent Skills, so they also run outside Claude Code:
 # macOS / Linux
 ./scripts/install.sh --all          # also installs to ~/.agents/skills (Codex/OpenCode), ~/.hermes/skills (Hermes), and ~/.gemini/config/skills (AntiGravity)
 ./scripts/install.sh --agents       # just Codex + OpenCode
+./scripts/install.sh --copilot      # Copilot CLI, app and VS Code
 ./scripts/install.sh --hermes       # just Hermes
 ./scripts/install.sh --antigravity  # just Google AntiGravity
 ./scripts/install.sh --agents --burp-mcp   # also wire your Burp MCP into those harnesses
@@ -84,12 +85,17 @@ The skills are plain Agent Skills, so they also run outside Claude Code:
 # Windows (PowerShell)
 pwsh ./scripts/install.ps1 -All          # Codex + OpenCode + Hermes + Google AntiGravity
 pwsh ./scripts/install.ps1 -Agents       # just Codex + OpenCode
+pwsh ./scripts/install.ps1 -Copilot      # Copilot CLI, app and VS Code
 pwsh ./scripts/install.ps1 -Hermes       # just Hermes
 pwsh ./scripts/install.ps1 -AntiGravity  # just Google AntiGravity
 pwsh ./scripts/install.ps1 -Agents -BurpMcp   # also wire your Burp MCP into those harnesses
 ```
 
-Slash commands, the plugin marketplace, and the `/hunt` engine are Claude-Code-only; other harnesses get the skill knowledge + Burp MCP. Full details and per-harness MCP snippets: [`docs/multi-harness.md`](docs/multi-harness.md).
+Claude commands, the plugin marketplace, and the headless engine are not automatically ported. Other harnesses get the skill knowledge; MCP setup varies by harness. Full details: [`docs/multi-harness.md`](docs/multi-harness.md).
+
+Copilot installation does not configure HackerOne MCP or disable existing MCP
+settings. For codebase privacy and client-specific disabling, read the
+[Copilot privacy guidance](docs/multi-harness.md#github-copilot-and-codebase-privacy).
 
 ## Step 3 — (Optional) Set up Burp MCP
 

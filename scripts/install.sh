@@ -12,10 +12,11 @@
 # the plugin marketplace, and the /hunt engine are Claude-Code-specific and do
 # NOT port; other harnesses get the knowledge, not the orchestration):
 #   --agents       force-copy skills → ~/.agents/skills/  (Codex; OpenCode reads ~/.claude)
+#   --copilot      force-copy skills → ~/.agents/skills/  (Copilot CLI, app, VS Code)
 #   --hermes       force-copy skills → ~/.hermes/skills/   (Hermes Agent)
 #   --antigravity  force-copy skills → ~/.gemini/config/skills/ (Google AntiGravity)
 #   --all          DETECT installed harnesses and install to each: Claude always, ~/.agents
-#                  if Codex is present, ~/.hermes if Hermes is present, ~/.gemini/config/skills
+#                  if Codex or Copilot CLI is present, ~/.hermes if Hermes is present, ~/.gemini/config/skills
 #                  if Google AntiGravity is present. With --burp-mcp / --hackerone-mcp
 #                  it wires those servers only into the detected harnesses. (--agents/--hermes/--antigravity
 #                  still force a path regardless of detection.)
@@ -57,11 +58,12 @@ HARNESS_MANIFEST_DIR="$MANIFEST_DIR/$BUNDLE_NAME-harnesses"
 
 usage() { sed -n '2,/^# ===/p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'; }
 
-DO_AGENTS=0; DO_HERMES=0; DO_ANTIGRAVITY=0; DO_MCP=0; DO_H1_MCP=0; NORMALIZE=0; DETECT=0; DO_UNINSTALL=0; NO_SHELL=0
-HAS_CLAUDE=0; HAS_OPENCODE=0; HAS_CODEX=0; HAS_HERMES=0; HAS_ANTIGRAVITY=0
+DO_AGENTS=0; DO_COPILOT=0; DO_HERMES=0; DO_ANTIGRAVITY=0; DO_MCP=0; DO_H1_MCP=0; NORMALIZE=0; DETECT=0; DO_UNINSTALL=0; NO_SHELL=0
+HAS_CLAUDE=0; HAS_OPENCODE=0; HAS_CODEX=0; HAS_COPILOT=0; HAS_HERMES=0; HAS_ANTIGRAVITY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --agents) DO_AGENTS=1 ;;
+    --copilot) DO_COPILOT=1 ;;
     --hermes) DO_HERMES=1 ;;
     --antigravity) DO_ANTIGRAVITY=1 ;;
     --all)    DETECT=1 ;;
@@ -137,19 +139,22 @@ if [ "$DETECT" = "1" ]; then
   if command -v claude      >/dev/null 2>&1 || [ -d "$HOME/.claude" ];             then HAS_CLAUDE=1; fi
   if command -v opencode    >/dev/null 2>&1 || [ -d "$HOME/.config/opencode" ];    then HAS_OPENCODE=1; fi
   if command -v codex       >/dev/null 2>&1 || [ -d "$HOME/.codex" ];              then HAS_CODEX=1; fi
+  if command -v copilot     >/dev/null 2>&1 || [ -d "$HOME/.copilot" ];            then HAS_COPILOT=1; fi
   if command -v hermes      >/dev/null 2>&1 || [ -d "$HOME/.hermes" ];             then HAS_HERMES=1; fi
   if command -v antigravity >/dev/null 2>&1 || command -v agy >/dev/null 2>&1 || [ -d "$HOME/.gemini/config" ]; then HAS_ANTIGRAVITY=1; fi
   echo "Detecting installed harnesses:"
   if [ "$HAS_CLAUDE"      = "1" ]; then echo "  ✓ Claude Code        → ~/.claude/skills"; fi
   if [ "$HAS_OPENCODE"    = "1" ]; then echo "  ✓ OpenCode           → reads ~/.claude/skills (MCP wired separately)"; fi
   if [ "$HAS_CODEX"       = "1" ]; then echo "  ✓ Codex CLI          → ~/.agents/skills"; fi
+  if [ "$HAS_COPILOT"     = "1" ]; then echo "  ✓ GitHub Copilot     → ~/.agents/skills"; fi
   if [ "$HAS_HERMES"      = "1" ]; then echo "  ✓ Hermes Agent       → ~/.hermes/skills"; fi
   if [ "$HAS_ANTIGRAVITY" = "1" ]; then echo "  ✓ Google AntiGravity → ~/.gemini/config/skills"; fi
-  if [ "$HAS_OPENCODE" = "0" ] && [ "$HAS_CODEX" = "0" ] && [ "$HAS_HERMES" = "0" ] && [ "$HAS_ANTIGRAVITY" = "0" ]; then
-    echo "  (only Claude Code detected — installing there. Force others with --agents / --hermes / --antigravity.)"
+  if [ "$HAS_OPENCODE" = "0" ] && [ "$HAS_CODEX" = "0" ] && [ "$HAS_COPILOT" = "0" ] && [ "$HAS_HERMES" = "0" ] && [ "$HAS_ANTIGRAVITY" = "0" ]; then
+    echo "  (only Claude Code detected — force others with --copilot / --agents / --hermes / --antigravity.)"
   fi
   echo ""
   if [ "$HAS_CODEX"       = "1" ]; then DO_AGENTS=1; fi
+  if [ "$HAS_COPILOT"     = "1" ]; then DO_COPILOT=1; fi
   if [ "$HAS_HERMES"      = "1" ]; then DO_HERMES=1; fi
   if [ "$HAS_ANTIGRAVITY" = "1" ]; then DO_ANTIGRAVITY=1; fi
 fi
@@ -190,7 +195,7 @@ install_skills() {
 }
 
 echo "Installing Claude-BugHunter bundle from $REPO_DIR"
-if [ "$DO_AGENTS" = "1" ] || [ "$DO_HERMES" = "1" ] || [ "$DO_ANTIGRAVITY" = "1" ]; then echo "(multi-harness mode)"; fi
+if [ "$DO_AGENTS" = "1" ] || [ "$DO_COPILOT" = "1" ] || [ "$DO_HERMES" = "1" ] || [ "$DO_ANTIGRAVITY" = "1" ]; then echo "(multi-harness mode)"; fi
 echo ""
 
 # === Claude Code (always) — skills + commands + hunt.sh ===
@@ -269,7 +274,7 @@ record_harness() {
   touch "$HARNESS_MANIFEST_DIR/$1"
 }
 
-if [ "$DO_AGENTS" = "1" ]; then
+if [ "$DO_AGENTS" = "1" ] || [ "$DO_COPILOT" = "1" ]; then
   install_skills "$HOME/.agents/skills" "agents"
   record_harness agents
   # Codex (which reads ~/.agents/skills) HARD-rejects descriptions > 1024 chars.
@@ -363,12 +368,16 @@ echo "============================================"
 echo ""
 echo "Claude Code:        $HOME/.claude/skills  (+ commands, hunt.sh)"
 if [ "$DO_AGENTS" = "1" ]; then echo "Codex+OpenCode:     $HOME/.agents/skills"; fi
+if [ "$DO_COPILOT" = "1" ]; then
+  echo "GitHub Copilot:     $HOME/.agents/skills"
+  echo "  HackerOne MCP was not configured for Copilot. Disable any existing HackerOne server separately."
+fi
 if [ "$DO_HERMES" = "1" ]; then echo "Hermes Agent:       $HOME/.hermes/skills"; fi
 if [ "$DO_ANTIGRAVITY" = "1" ]; then echo "Google AntiGravity: $HOME/.gemini/config/skills"; fi
 if [ -d "$BACKUP_DEST" ]; then echo "Backups:            $BACKUP_DEST  (outside loading paths)"; fi
 echo ""
-if [ "$DETECT" = "0" ] && [ "$DO_AGENTS" = "0" ] && [ "$DO_HERMES" = "0" ] && [ "$DO_ANTIGRAVITY" = "0" ]; then
-  echo "Other harnesses?  bash scripts/install.sh --all   (auto-detects Codex / OpenCode / Hermes / AntiGravity)"
+if [ "$DETECT" = "0" ] && [ "$DO_AGENTS" = "0" ] && [ "$DO_COPILOT" = "0" ] && [ "$DO_HERMES" = "0" ] && [ "$DO_ANTIGRAVITY" = "0" ]; then
+  echo "Other harnesses?  bash scripts/install.sh --all   (auto-detects Copilot CLI / Codex / OpenCode / Hermes / AntiGravity)"
   echo "See also: docs/multi-harness.md"
 fi
 echo ""
