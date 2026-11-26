@@ -336,7 +336,9 @@ def get_report(args):
 
 # ─── Tool table ──────────────────────────────────────────────────────────────
 
-_PROGRAM = {"type": "string", "description": "HackerOne program handle, e.g. 'gitlab'."}
+_PRIVACY = ("Do not use this tool for codebase reviews or send source code, paths, "
+            "internal URLs, identifiers, findings, credentials, or other codebase details.")
+_PROGRAM = {"type": "string", "description": "HackerOne program handle, e.g. 'gitlab'. " + _PRIVACY}
 _RO = {"readOnlyHint": True, "openWorldHint": True}
 
 PUBLIC_TOOLS = [
@@ -344,7 +346,7 @@ PUBLIC_TOOLS = [
       "description": "Search HackerOne Hacktivity's disclosed reports. Use it before writing a report to check "
                      "for duplicates on the same program, and to find disclosed techniques for a bug class. "
                      "The query is matched by HackerOne's search (supports AND / OR); program narrows to one "
-                     "program's disclosures.",
+                     "program's disclosures. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {
           "query": {"type": "string", "description": "Keywords, e.g. 'ssrf', 'oauth AND redirect_uri'."},
           "program": _PROGRAM,
@@ -355,13 +357,13 @@ PUBLIC_TOOLS = [
       "annotations": _RO}, search_disclosed_reports),
     ({"name": "get_program",
       "description": "A public HackerOne program's bounty figures: base bounty, average bounty range, "
-                     "resolved report count, launch date and state.",
+                     "resolved report count, launch date and state. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {"program": _PROGRAM}, "required": ["program"]},
       "annotations": _RO}, get_program),
     ({"name": "get_program_scope",
       "description": "A public HackerOne program's structured scope (in-scope and out-of-scope assets, bounty "
                      "eligibility, max severity, per-asset instructions) and its policy text. Check this "
-                     "before touching any asset.",
+                     "before touching any asset. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {
           "program": _PROGRAM,
           "include_policy": {"type": "boolean", "default": True,
@@ -372,7 +374,7 @@ PUBLIC_TOOLS = [
       "description": "Fetch a disclosed HackerOne report's full write-up body and public metadata by id "
                      "or url. Read-only, keyless. Use it when testing a vuln class to read the real "
                      "precedent report's reproduction steps and bypasses before mirroring them on a live "
-                     "target. Returns a note when the public body is thin or empty.",
+                     "target. Returns a note when the public body is thin or empty. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {
           "id": {"type": "integer", "description": "Report id, e.g. 826361."},
           "url": {"type": "string", "description": "Report url, e.g. https://hackerone.com/reports/826361."}}},
@@ -382,18 +384,18 @@ PUBLIC_TOOLS = [
 AUTH_TOOLS = [
     ({"name": "list_my_programs",
       "description": "Programs your HackerOne account can see through the Hacker API, including private "
-                     "programs you are invited to. Read-only.",
+                     "programs you are invited to. Read-only. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {
           "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100}}},
       "annotations": _RO}, list_my_programs),
     ({"name": "get_my_program",
       "description": "One program's policy and full structured scope as your account sees it, private "
-                     "programs included. Read-only.",
+                     "programs included. Read-only. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {"program": _PROGRAM}, "required": ["program"]},
       "annotations": _RO}, get_my_program),
     ({"name": "list_my_reports",
       "description": "Your own HackerOne reports with their state, optionally for one program. Use it to "
-                     "check you have not already reported something. Read-only.",
+                     "check you have not already reported something. Read-only. " + _PRIVACY,
       "inputSchema": {"type": "object", "properties": {
           "program": _PROGRAM,
           "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 50}}},

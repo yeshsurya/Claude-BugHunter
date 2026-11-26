@@ -96,7 +96,11 @@ session end              →  /remember  (silent)
 
 hand off to the loaded `hunt-*` skills. each skill has its own probes, payloads, validation. do not duplicate that logic here. on every confirmed finding, invoke `/chain` to check the A→B signal table.
 
-when testing a vuln-class on a program, read the real precedent first: call `search_disclosed_reports(query=<vuln-class>, program=<handle>)`, then `get_report(url=<top result's url>)` (both are HackerOne MCP tools, keyless), read the disclosed write-up, and mirror its exact technique and bypass on the live target. if `get_report` returns a `note` (thin or empty public body), fall back to the distilled pattern in `docs/disclosed-reports/`.
+for codebase reviews, do not invoke HackerOne tools or send codebase-derived details
+to external research services. use the bundled patterns in `docs/disclosed-reports/`.
+for other authorized program hunts, public precedent can be looked up with
+`search_disclosed_reports` and `get_report`; never include code, paths, internal
+URLs, findings, credentials, or other codebase details in tool arguments.
 
 ## modes
 

@@ -14,10 +14,11 @@
 # the plugin marketplace, and the /hunt engine are Claude-Code-specific and do
 # NOT port; other harnesses get the knowledge, not the orchestration):
 #   -Agents        force-copy skills -> ~\.agents\skills\  (Codex; OpenCode reads ~\.claude)
+#   -Copilot       force-copy skills -> ~\.agents\skills\  (Copilot CLI, app, VS Code)
 #   -Hermes        force-copy skills -> ~\.hermes\skills\   (Hermes Agent)
 #   -AntiGravity   force-copy skills -> ~\.gemini\config\skills\ (Google AntiGravity)
 #   -All           DETECT installed harnesses and install to each: Claude always, ~\.agents
-#                  if Codex is present, ~\.hermes if Hermes is present, ~\.gemini\config\skills
+#                  if Codex or Copilot CLI is present, ~\.hermes if Hermes is present, ~\.gemini\config\skills
 #                  if Google AntiGravity is present. With -BurpMcp it
 #                  wires Burp only into the detected harnesses. (-Agents/-Hermes/-AntiGravity still
 #                  force a path regardless of detection.)
@@ -42,6 +43,7 @@
 [CmdletBinding()]
 param(
     [switch] $Agents,
+    [switch] $Copilot,
     [switch] $Hermes,
     [switch] $AntiGravity,
     [switch] $All,
@@ -172,10 +174,10 @@ function Install-Skills([string] $Dest, [string] $Label) {
 }
 
 # --- flag plumbing -----------------------------------------------------
-$DO_AGENTS = [bool]$Agents; $DO_HERMES = [bool]$Hermes; $DO_ANTIGRAVITY = [bool]$AntiGravity; $DO_MCP = [bool]$BurpMcp; $DO_H1_MCP = [bool]$HackeroneMcp
+$DO_AGENTS = [bool]$Agents; $DO_COPILOT = [bool]$Copilot; $DO_HERMES = [bool]$Hermes; $DO_ANTIGRAVITY = [bool]$AntiGravity; $DO_MCP = [bool]$BurpMcp; $DO_H1_MCP = [bool]$HackeroneMcp
 $NORMALIZE = [bool]$NormalizeFrontmatter; $DETECT = [bool]$All
 $DO_UNINSTALL = [bool]$Uninstall; $NO_PROFILE = [bool]$NoProfile
-$HAS_CLAUDE = $false; $HAS_OPENCODE = $false; $HAS_CODEX = $false; $HAS_HERMES = $false; $HAS_ANTIGRAVITY = $false
+$HAS_CLAUDE = $false; $HAS_OPENCODE = $false; $HAS_CODEX = $false; $HAS_COPILOT = $false; $HAS_HERMES = $false; $HAS_ANTIGRAVITY = $false
 
 # --- Uninstall ---------------------------------------------------------
 function Uninstall-Bundle {
@@ -249,19 +251,22 @@ if ($DETECT) {
     if ((Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.claude'))) { $HAS_CLAUDE = $true }
     if ((Get-Command opencode -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.config\opencode'))) { $HAS_OPENCODE = $true }
     if ((Get-Command codex -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.codex'))) { $HAS_CODEX = $true }
+    if ((Get-Command copilot -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.copilot'))) { $HAS_COPILOT = $true }
     if ((Get-Command hermes -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.hermes'))) { $HAS_HERMES = $true }
     if ((Get-Command antigravity -ErrorAction SilentlyContinue) -or (Get-Command agy -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.gemini\config'))) { $HAS_ANTIGRAVITY = $true }
     Write-Host "Detecting installed harnesses:"
     if ($HAS_CLAUDE)      { Write-Host "  + Claude Code        -> ~\.claude\skills" }
     if ($HAS_OPENCODE)    { Write-Host "  + OpenCode           -> reads ~\.claude\skills (MCP wired separately)" }
     if ($HAS_CODEX)       { Write-Host "  + Codex CLI          -> ~\.agents\skills" }
+    if ($HAS_COPILOT)     { Write-Host "  + GitHub Copilot     -> ~\.agents\skills" }
     if ($HAS_HERMES)      { Write-Host "  + Hermes Agent       -> ~\.hermes\skills" }
     if ($HAS_ANTIGRAVITY) { Write-Host "  + Google AntiGravity -> ~\.gemini\config\skills" }
-    if (-not ($HAS_OPENCODE -or $HAS_CODEX -or $HAS_HERMES -or $HAS_ANTIGRAVITY)) {
-        Write-Host "  (only Claude Code detected -- installing there. Force others with -Agents / -Hermes / -AntiGravity.)"
+    if (-not ($HAS_OPENCODE -or $HAS_CODEX -or $HAS_COPILOT -or $HAS_HERMES -or $HAS_ANTIGRAVITY)) {
+        Write-Host "  (only Claude Code detected -- force others with -Copilot / -Agents / -Hermes / -AntiGravity.)"
     }
     Write-Host ''
     if ($HAS_CODEX)       { $DO_AGENTS = $true }
+    if ($HAS_COPILOT)     { $DO_COPILOT = $true }
     if ($HAS_HERMES)      { $DO_HERMES = $true }
     if ($HAS_ANTIGRAVITY) { $DO_ANTIGRAVITY = $true }
 }
@@ -273,7 +278,7 @@ $skillCount = (Get-ChildItem -LiteralPath $SkillsSource -Directory).Count
 
 # --- Claude Code (always): skills + commands + hunt.ps1 ----------------
 Write-Host "Installing Claude-BugHunter bundle from $RepoDir"
-if ($DO_AGENTS -or $DO_HERMES -or $DO_ANTIGRAVITY) { Write-Host "(multi-harness mode)" }
+if ($DO_AGENTS -or $DO_COPILOT -or $DO_HERMES -or $DO_ANTIGRAVITY) { Write-Host "(multi-harness mode)" }
 Write-Host ''
 
 Install-Skills (Join-Path $HOME '.claude\skills') 'skills'
@@ -350,7 +355,7 @@ function Record-Harness([string] $Label) {
     Write-HuntFile (Join-Path $HarnessManifestDir $Label) ''
 }
 
-if ($DO_AGENTS) {
+if ($DO_AGENTS -or $DO_COPILOT) {
     Install-Skills (Join-Path $HOME '.agents\skills') 'agents'
     Record-Harness 'agents'
     $py = Get-Python
@@ -454,12 +459,16 @@ Write-Host "============================================"
 Write-Host ''
 Write-Host "Claude Code:        $(Join-Path $HOME '.claude\skills')  (+ commands, hunt.ps1)"
 if ($DO_AGENTS)      { Write-Host "Codex+OpenCode:     $(Join-Path $HOME '.agents\skills')" }
+if ($DO_COPILOT) {
+    Write-Host "GitHub Copilot:     $(Join-Path $HOME '.agents\skills')"
+    Write-Host "  HackerOne MCP was not configured for Copilot. Disable any existing HackerOne server separately."
+}
 if ($DO_HERMES)      { Write-Host "Hermes Agent:       $(Join-Path $HOME '.hermes\skills')" }
 if ($DO_ANTIGRAVITY) { Write-Host "Google AntiGravity: $(Join-Path $HOME '.gemini\config\skills')" }
 if ($BackupDest -and (Test-Path -LiteralPath $BackupDest)) { Write-Host "Backups:            $BackupDest  (outside loading paths)" }
 Write-Host ''
-if (-not $DETECT -and -not $DO_AGENTS -and -not $DO_HERMES -and -not $DO_ANTIGRAVITY) {
-    Write-Host "Other harnesses?  pwsh ./scripts/install.ps1 -All   (auto-detects Codex / OpenCode / Hermes / AntiGravity)"
+if (-not $DETECT -and -not $DO_AGENTS -and -not $DO_COPILOT -and -not $DO_HERMES -and -not $DO_ANTIGRAVITY) {
+    Write-Host "Other harnesses?  pwsh ./scripts/install.ps1 -All   (auto-detects Copilot CLI / Codex / OpenCode / Hermes / AntiGravity)"
     Write-Host "See also: docs/multi-harness.md"
 }
 Write-Host ''

@@ -108,7 +108,7 @@ That's it. Open Claude Code and describe what you're testing in plain English �
 
 ![One install, agent harnesses — Claude Code, OpenCode, Codex CLI, Hermes Agent, Google AntiGravity](assets/harness-routing.svg)
 
-The skills are plain [Agent Skills](https://docs.claude.com/en/docs/claude-code/skills) — the same `SKILL.md` format that **Claude Code · OpenCode · OpenAI Codex CLI · Hermes Agent · Google AntiGravity** all load. One command installs them everywhere:
+The skills are plain [Agent Skills](https://docs.claude.com/en/docs/claude-code/skills) — the same `SKILL.md` format that **GitHub Copilot CLI, app and VS Code · Claude Code · OpenCode · OpenAI Codex CLI · Hermes Agent · Google AntiGravity** all load.
 
 ```bash
 # macOS / Linux
@@ -121,12 +121,15 @@ pwsh ./scripts/install.ps1 -All -BurpMcp
 | Harness | Target Skill Directory | Flag |
 |---|---|---|
 | **Claude Code** (baseline) | `~/.claude/skills/` | *(default)* |
+| **GitHub Copilot CLI, app, VS Code** | `~/.agents/skills/` | `--copilot` |
 | **OpenCode** | reads `~/.claude/skills/` & `~/.agents/skills/` | *(default)* / `--agents` |
 | **OpenAI Codex CLI** | `~/.agents/skills/` | `--agents` |
 | **Hermes Agent** | `~/.hermes/skills/` | `--hermes` |
 | **Google AntiGravity** | `~/.gemini/config/skills/` | `--antigravity` |
 
-`--all` (`-All`) detects installed harnesses and copies skills to each harness's path (`~/.claude/skills`, `~/.agents/skills`, `~/.hermes/skills`, `~/.gemini/config/skills`); `--burp-mcp` (`-BurpMcp`) wires the Burp MCP server into each. The full *knowledge* layer ports to all five — the slash commands and `/hunt` engine stay Claude-Code-only by design.
+`--all` (`-All`) detects installed harnesses and copies skills to their paths. `--burp-mcp` (`-BurpMcp`) wires Burp only into supported non-Copilot harness configurations. The skills provide the knowledge layer; Claude commands and the headless engine are not automatically ported.
+
+For Copilot, use `bash scripts/install.sh --copilot` or `pwsh ./scripts/install.ps1 -Copilot`. The installer does **not** configure HackerOne MCP for Copilot or disable an existing configuration; see the privacy guidance below before reviewing private code.
 
 → [Multi-harness guide](docs/multi-harness.md)
 

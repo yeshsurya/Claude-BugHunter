@@ -8,6 +8,14 @@ sources: community, public_research
 
 Master orchestrator for hunting sessions. Combines the 5-phase non-linear workflow with the critical thinking framework that separates top 1% hunters from the rest.
 
+## Codebase privacy
+
+When working on a codebase, do not send its source code, filenames, internal URLs,
+identifiers, findings, credentials, or other codebase-derived details to HackerOne
+or another external research service, including through MCP tools, shell commands,
+or search queries. Use bundled patterns and local analysis instead. Do not invoke
+HackerOne tools for a codebase review.
+
 ---
 
 ## PART 0: MODE CONFIRMATION (Before Anything Else)

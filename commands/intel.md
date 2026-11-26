@@ -7,11 +7,16 @@ description: "On-demand intelligence fetch for a target — CVEs, disclosed repo
 
 Fetch actionable intelligence for a target.
 
+For a codebase review, use local sources only: do not invoke HackerOne or send
+code, paths, internal URLs, findings, credentials, or other codebase-derived
+details to any external research service.
+
 ## What This Does
 
-1. Looks up CVEs and advisories matching the target's tech stack (NVD + GitHub
-   Advisory via web search; `learn.py` is used as an accelerator only if present)
-2. Fetches HackerOne Hacktivity for the target (via the HackerOne MCP's
+1. For non-codebase engagements only, looks up CVEs and advisories matching the
+   target's tech stack (NVD + GitHub Advisory via web search; `learn.py` is used
+   as an accelerator only if present)
+2. For non-codebase engagements only, fetches HackerOne Hacktivity for the target (via the HackerOne MCP's
    `search_disclosed_reports`, `get_program` and `get_program_scope` if connected — see `mcp/hackerone/`)
    and cross-references the bundled `docs/disclosed-reports/`
 3. Cross-references with hunt memory — flags untested CVEs and new endpoints

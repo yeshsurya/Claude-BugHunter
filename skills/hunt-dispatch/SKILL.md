@@ -9,6 +9,13 @@ report_count: 0
 
 skill-set loader for `/hunt`. one concept (which skills to load), one place.
 
+## codebase privacy
+
+for codebase reviews, do not invoke HackerOne tools or send source code, paths,
+internal URLs, identifiers, findings, credentials, or other codebase-derived
+details to external research services via MCP, shell commands, or search queries.
+use bundled patterns and local analysis instead.
+
 ## engagement context
 
 every skill loaded below operates under one frame, and it holds for the whole session:
